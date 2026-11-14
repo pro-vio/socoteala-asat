@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body{margin:0}</style>
+</head>
+<body>
+<title>Socoteala la ASAT</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: titlu, alegerea lunii plătite cu suma de plată, apoi un singur tabel cu o linie pentru fiecare distribuție */
+:root{
+  --bg:#f3f5f1; --card:#ffffff; --fg:#1f2a22; --muted:#5d6b61; --line:#d6ddd5;
+  --accent:#2f6b45; --accent-soft:#e1eee4; --warn:#9a5b00; --paid:#7b8a80;
+  --f-text:"Work Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141a16; --card:#1c241f; --fg:#e4ebe5; --muted:#9aa89e; --line:#2f3a33;
+  --accent:#7cc493; --accent-soft:#1f3527; --warn:#e6b25c; --paid:#6f7d73; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a16; --card:#1c241f; --fg:#e4ebe5; --muted:#9aa89e; --line:#2f3a33;
+  --accent:#7cc493; --accent-soft:#1f3527; --warn:#e6b25c; --paid:#6f7d73; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-text);font-size:15px;line-height:1.5}
+.wrap{max-width:1040px;margin:0 auto;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:18px}
+h1{font-size:1.7rem;margin:0;font-weight:700;letter-spacing:-.01em}
+.lead{margin:0;color:var(--muted);max-width:75ch}
+.bar{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:end}
+.bar div{display:flex;flex-direction:column;gap:4px}
+label,.k{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+select{font:inherit;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
+select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.big{font-family:var(--f-num);font-size:1.8rem;font-weight:500;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:860px;font-size:.9rem}
+th,td{padding:7px 12px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
+th{font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600;background:var(--bg)}
+th:first-child,td:first-child,th:nth-last-child(-n+2),td:nth-last-child(-n+2){text-align:left}
+td.n{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+td.n small{color:var(--muted);font-size:.78rem}
+td.note{color:var(--muted);font-size:.84rem}
+tr.first td{border-top:2px solid var(--line)}
+tr.paid td{color:var(--paid)}
+tfoot td{font-weight:700;background:var(--accent-soft)}
+.chip{font-size:.72rem;padding:1px 7px;border-radius:99px;font-weight:600;white-space:nowrap}
+.chip.due{background:var(--accent-soft);color:var(--accent)}
+.chip.paid{background:var(--line);color:var(--paid)}
+.q{color:var(--warn)}
+.foot{font-size:.85rem;color:var(--muted);margin:0;max-width:80ch}
+</style>
+
+<div class="wrap">
+  <h1>Socoteala la ASAT</h1>
+  <p class="lead">O linie pentru fiecare distribuție de marți. Regula distribuției: legumele, o sticlă de lapte de 2 l și 10 ouă. Unde nu e notă, distribuția a fost după regulă; în note stau abaterile. Abonamentul lunii stă pe prima distribuție din lună.</p>
+
+  <div class="bar">
+    <div><label for="lastPaid">Ultima lună plătită</label><select id="lastPaid"><option value="-1">nimic din aprilie</option></select></div>
+    <div><span class="k">De plată acum, fără luna în curs</span><span class="big" id="total">0 lei</span></div>
+  </div>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Data</th><th>Lapte</th><th>Ouă</th><th>Brânză</th><th>Abonament</th><th>Total</th><th>Stare</th><th>Note</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="8">Distribuțiile se încarcă.</td></tr></tbody>
+      <tfoot><tr><td>De plată</td><td class="n" id="fL"></td><td class="n" id="fO"></td><td class="n" id="fB"></td><td class="n" id="fA"></td><td class="n" id="fT"></td><td></td><td></td></tr></tfoot>
+    </table>
+  </div>
+
+  <p class="foot">Prețuri: lapte 6 lei sticla de 2 l și ouă 10 lei la 10 ouă, ca în Excel; brânză 15 lei pe kg vara, până în iulie, și 20 de lei pe kg din toamnă. Abonamentul e 190 de lei pe lună și include legumele; laptele, ouăle și brânza se plătesc separat, după cât vine.</p>
+</div>
+
+<script>
+const L=6, O=10, ABON=190;
+// Fiecare distribuție: [data, sticle lapte, ouă (bucăți), brânză kg, sumă brânză, notă]
+// null = nu se știe; 0 = n-a fost.
+const months = [
+  {name:"aprilie 2026", rows:[
+    ["7 aprilie",1,20,3,45,"20 de ouă; brânza pe toată luna aprilie (3 kg × 15 lei)"],
+    ["14 aprilie",1,10,-1,0,""],["21 aprilie",1,10,-1,0,""],["28 aprilie",1,10,-1,0,""]]},
+  {name:"mai 2026", rows:[
+    ["5 mai",1,10,4,60,"brânza pe toată luna mai (4 kg × 15 lei); ouăle din mai sunt 50 de lei în Excel, după regulă ies 40"],
+    ["12 mai",1,10,0,0,"fără brânză"],
+    ["19 mai",1,10,-1,0,""],["26 mai",1,10,-1,0,""]]},
+  {name:"iunie 2026", rows:[
+    ["2 iunie",1,10,0,0,""],["9 iunie",1,10,2,30,"brânza 15 lei pe kg"],["16 iunie",1,10,0,0,""],
+    ["23 iunie",1,10,2,30,"brânza 15 lei pe kg"],["30 iunie",1,10,0,0,""]]},
+  {name:"iulie 2026", rows:["7","14","21","28"].map(d=>[d+" iulie",1,10,0,0,""])},
+  {name:"august 2026", rows:[["4 august",1,10,0,0,""],["11 august",1,10,0,0,""],["18 august",0,10,0,0,"concediu, fără lapte"],["25 august",1,20,0,0,"20 de ouă"]]},
+  {name:"septembrie 2026", rows:[["1 septembrie",0,10,0,0,"concediu, fără lapte"],["8 septembrie",1,20,0,0,"20 de ouă"]].concat(["15","22","29"].map(d=>[d+" septembrie",1,10,0,0,""]))},
+  {name:"octombrie 2026", rows:["6","13","20"].map(d=>[d+" octombrie",1,10,0,0,""]).concat([["27 octombrie",2,0,0,0,"2 sticle (4 l), fără ouă"]])},
+  {name:"noiembrie 2026", rows:[["3 noiembrie",1,10,0,0,""],["10 noiembrie",1,10,1.8,36,"brânza 20 de lei pe kg"]]},
+];
+const CUR = new Date().toLocaleDateString("ro-RO",{month:"long",year:"numeric"});
+const lei = n => n.toLocaleString("ro-RO") + " lei";
+const q = '<td class="n q">?</td>';
+const sel = document.getElementById("lastPaid");
+months.forEach((m,i)=>sel.add(new Option(m.name, String(i))));
+// Plăți: până la mai 2026 inclusiv, verificat în cont pe 14 noiembrie 2026; iunie–octombrie plătite pe 14 noiembrie 2026.
+const PAID = {"iunie 2026":"14 noiembrie 2026","iulie 2026":"14 noiembrie 2026","august 2026":"14 noiembrie 2026","septembrie 2026":"14 noiembrie 2026","octombrie 2026":"14 noiembrie 2026"};
+sel.value = "6"; // ultima lună plătită: octombrie 2026
+
+function render(){
+  const last = +sel.value;
+  const f = [0,0,0,0];
+  let html = "";
+  months.forEach((m,i)=>{
+    const curr = m.name===CUR; // luna în curs se plătește luna viitoare
+    const due = i>last && !curr;
+    m.rows.forEach((r,k)=>{
+      const [d, st, ou, kg, bl, note] = r;
+      const lL = st===null ? null : st*L, lO = ou===null ? null : ou/10*O;
+      const ab = k===0 ? ABON : 0;
+      const unknown = lL===null || lO===null || bl===null;
+      const tot = (lL||0)+(lO||0)+(bl||0)+ab;
+      if(due){ f[0]+=lL||0; f[1]+=lO||0; f[2]+=bl||0; f[3]+=ab; }
+      const cL = st===null ? q : '<td class="n">'+(st?st+' <small>'+(st===1?'sticlă':'sticle')+'</small> · '+lei(lL):'—')+'</td>';
+      const cO = ou===null ? q : '<td class="n">'+(ou?ou+' · '+lei(lO):'—')+'</td>';
+      const cB = kg===null ? q : (kg<0 ? '<td class="n"></td>' : kg===0 ? '<td class="n">—</td>'
+                 : '<td class="n">'+String(kg).replace(".",",")+' <small>kg</small> · '+(bl===null?'<span class="q">?</span>':lei(bl))+'</td>');
+      html += '<tr class="'+(k===0?'first ':'')+((due||curr)?'':'paid')+'"><td>'+d+'</td>'+cL+cO+cB
+        + '<td class="n">'+(ab?lei(ab):'')+'</td>'
+        + '<td class="n">'+lei(tot)+(unknown?' <span class="q">+?</span>':'')+'</td>'
+        + '<td><span class="chip '+(due?'due':'paid')+'">'+(due?'de plată':curr?'luna în curs':'plătit'+(PAID[m.name]?' pe '+PAID[m.name]:''))+'</span></td>'
+        + '<td class="note">'+note+'</td></tr>';
+    });
+  });
+  document.getElementById("rows").innerHTML = html;
+  const T = f.reduce((a,b)=>a+b,0);
+  ["fL","fO","fB","fA"].forEach((id,j)=>document.getElementById(id).textContent = lei(f[j]));
+  document.getElementById("fT").textContent = lei(T);
+  document.getElementById("total").textContent = lei(T);
+}
+sel.addEventListener("change", render);
+render();
+</script>
+
+</body>
+</html>
