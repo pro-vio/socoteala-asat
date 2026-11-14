@@ -57,7 +57,7 @@ tfoot td{font-weight:700;background:var(--accent-soft)}
 
 <div class="wrap">
   <h1>Socoteala la ASAT</h1>
-  <p class="lead">O linie pentru fiecare distribuție de marți. Regula distribuției: legumele, o sticlă de lapte de 2 l și 10 ouă. Unde nu e notă, distribuția a fost după regulă; în note stau abaterile. Abonamentul lunii stă pe prima distribuție din lună.</p>
+  <p class="lead">O linie pentru fiecare distribuție de marți. Regula distribuției: legumele, o sticlă de lapte de 2 l și 10 ouă. În concediu nu se primește nimic; ouăle se compensează săptămâna următoare, laptele nu. Unde nu e notă, distribuția a fost după regulă; în note stau abaterile. Abonamentul lunii stă pe prima distribuție din lună.</p>
 
   <div class="bar">
     <div><span class="k">De plată</span><span class="big" id="total">0 lei</span><span class="sub" id="totalN">se calculează</span></div>
@@ -92,8 +92,8 @@ const months = [
     ["2 iunie",1,10,0,0,""],["9 iunie",1,10,2,30,"brânza 15 lei pe kg"],["16 iunie",1,10,0,0,""],
     ["23 iunie",1,10,2,30,"brânza 15 lei pe kg"],["30 iunie",1,10,0,0,""]]},
   {name:"iulie 2026", rows:["7","14","21","28"].map(d=>[d+" iulie",1,10,0,0,""])},
-  {name:"august 2026", rows:[["4 august",1,10,0,0,""],["11 august",1,10,0,0,""],["18 august",0,0,0,0,"concediu"],["25 august",1,20,0,0,"20 de ouă"]]},
-  {name:"septembrie 2026", rows:[["1 septembrie",0,0,0,0,"concediu"],["8 septembrie",1,20,0,0,"20 de ouă"]].concat(["15","22","29"].map(d=>[d+" septembrie",1,10,0,0,""]))},
+  {name:"august 2026", rows:[["4 august",1,10,0,0,""],["11 august",1,10,0,0,""],["18 august",0,0,0,0,"concediu"],["25 august",1,20,0,0,"20 de ouă: cele 10 din concediu, compensate"]]},
+  {name:"septembrie 2026", rows:[["1 septembrie",0,0,0,0,"concediu"],["8 septembrie",1,20,0,0,"20 de ouă: cele 10 din concediu, compensate"]].concat(["15","22","29"].map(d=>[d+" septembrie",1,10,0,0,""]))},
   {name:"octombrie 2026", rows:["6","13","20"].map(d=>[d+" octombrie",1,10,0,0,""]).concat([["27 octombrie",2,0,0,0,"2 sticle (4 l), fără ouă"]])},
   {name:"noiembrie 2026", rows:[["3 noiembrie",1,10,0,0,""],["10 noiembrie",1,10,1.8,36,"brânza 20 de lei pe kg"]]},
 ];
