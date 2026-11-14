@@ -8,9 +8,11 @@
 <body>
 <title>Socoteala la ASAT</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="asat-date" content="65f39ebd2616">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: titlu, alegerea lunii plătite cu suma de plată, apoi un singur tabel cu o linie pentru fiecare distribuție */
+/* Layout: titlu, sumele (de plată, plățile), apoi un singur tabel cu o linie pentru fiecare distribuție.
+   Șablon: datele și textele cu cifre le pune asat/socoteala.py construieste. */
 :root{
   --bg:#f3f5f1; --card:#ffffff; --fg:#1f2a22; --muted:#5d6b61; --line:#d6ddd5;
   --accent:#2f6b45; --accent-soft:#e1eee4; --warn:#9a5b00; --paid:#7b8a80; --p2:#2c5d8a; --p2-soft:#e3ecf5;
@@ -29,10 +31,10 @@ h1{font-size:1.7rem;margin:0;font-weight:700;letter-spacing:-.01em}
 .lead{margin:0;color:var(--muted);max-width:75ch}
 .bar{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:end}
 .bar div{display:flex;flex-direction:column;gap:4px}
-label,.k{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
-select{font:inherit;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--fg)}
-select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.k{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
 .big{font-family:var(--f-num);font-size:1.8rem;font-weight:500;font-variant-numeric:tabular-nums}
+.sub{font-size:.82rem;color:var(--muted)}
+.p2box{background:var(--p2-soft);border-radius:8px;padding:8px 12px}
 .scroll{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}
 table{border-collapse:collapse;width:100%;min-width:860px;font-size:.9rem}
 th,td{padding:7px 12px;border-bottom:1px solid var(--line);text-align:right;vertical-align:top}
@@ -44,25 +46,20 @@ td.note{color:var(--muted);font-size:.84rem}
 tr.first td{border-top:2px solid var(--line)}
 tr.paid td{color:var(--paid)}
 tr.p2 td{background:var(--p2-soft)}
-.chip.p2{background:var(--p2);color:var(--card)}
-.sub{font-size:.82rem;color:var(--muted)}
-.p2box{background:var(--p2-soft);border-radius:8px;padding:8px 12px}
 tfoot td{font-weight:700;background:var(--accent-soft)}
 .chip{font-size:.72rem;padding:1px 7px;border-radius:99px;font-weight:600;white-space:nowrap}
 .chip.due{background:var(--accent-soft);color:var(--accent)}
 .chip.paid{background:var(--line);color:var(--paid)}
-.q{color:var(--warn)}
+.chip.p2{background:var(--p2);color:var(--card)}
 .foot{font-size:.85rem;color:var(--muted);margin:0;max-width:80ch}
 </style>
 
 <div class="wrap">
   <h1>Socoteala la ASAT</h1>
-  <p class="lead">O linie pentru fiecare distribuție de marți. Regula distribuției: legumele, o sticlă de lapte de 2 l și 10 ouă. În concediu nu se primește nimic; ouăle se compensează săptămâna următoare, laptele nu. Unde nu e notă, distribuția a fost după regulă; în note stau abaterile. Abonamentul lunii stă pe prima distribuție din lună.</p>
+  <p class="lead">O linie pentru fiecare distribuție de marți. Regula distribuției: legumele, o sticlă de lapte de 2 l și 10 ouă. În concediu nu se primește nimic; ouăle se compensează la distribuția următoare, laptele nu. Unde nu e notă, distribuția a fost după regulă; în note stau abaterile. Abonamentul lunii stă pe prima distribuție din lună.</p>
 
-  <div class="bar">
+  <div class="bar" id="bar">
     <div><span class="k">De plată</span><span class="big" id="total">0 lei</span><span class="sub" id="totalN">se calculează</span></div>
-    <div class="p2box"><span class="k">Plătit pe 14 noiembrie 2026</span><span class="big" id="paid2">0 lei</span><span class="sub">iunie – octombrie 2026</span></div>
-    <div><span class="k">Plătit înainte</span><span class="sub">aprilie – mai 2026</span></div>
   </div>
 
   <div class="scroll">
@@ -73,60 +70,33 @@ tfoot td{font-weight:700;background:var(--accent-soft)}
     </table>
   </div>
 
-  <p class="foot">Prețuri: lapte 6 lei sticla de 2 l și ouă 10 lei la 10 ouă; brânză 15 lei pe kg vara, până în iulie, și 20 de lei pe kg din toamnă. Abonamentul e 190 de lei pe lună și include legumele; laptele, ouăle și brânza se plătesc separat, după cât vine.</p>
+  <p class="foot">Prețuri: lapte 6 lei sticla de 2 l și ouă 10 lei la 10 ouă; brânză 15 lei pe kg din aprilie până în iulie 2026, 20 lei pe kg din septembrie 2026. Abonamentul e 190 de lei pe lună și include legumele; laptele, ouăle și brânza se plătesc separat, după cât vine.</p>
 </div>
 
 <script>
-const L=6, O=10, ABON=190;
-// Fiecare distribuție: [data, sticle lapte, ouă (bucăți), brânză kg, sumă brânză, notă]
-// null = nu se știe; 0 = n-a fost.
-const months = [
-  {name:"aprilie 2026", rows:[
-    ["7 aprilie",1,20,3,45,"20 de ouă; brânza pe toată luna aprilie (3 kg × 15 lei)"],
-    ["14 aprilie",1,10,-1,0,""],["21 aprilie",1,10,-1,0,""],["28 aprilie",1,10,-1,0,""]]},
-  {name:"mai 2026", rows:[
-    ["5 mai",1,10,4,60,"brânza pe toată luna mai (4 kg × 15 lei)"],
-    ["12 mai",1,10,0,0,"fără brânză"],
-    ["19 mai",1,10,-1,0,""],["26 mai",1,10,-1,0,""]]},
-  {name:"iunie 2026", rows:[
-    ["2 iunie",1,10,0,0,""],["9 iunie",1,10,2,30,"brânza 15 lei pe kg"],["16 iunie",1,10,0,0,""],
-    ["23 iunie",1,10,2,30,"brânza 15 lei pe kg"],["30 iunie",1,10,0,0,""]]},
-  {name:"iulie 2026", rows:["7","14","21","28"].map(d=>[d+" iulie",1,10,0,0,""])},
-  {name:"august 2026", rows:[["4 august",1,10,0,0,""],["11 august",1,10,0,0,""],["18 august",0,0,0,0,"concediu"],["25 august",1,20,0,0,"20 de ouă: cele 10 din concediu, compensate"]]},
-  {name:"septembrie 2026", rows:[["1 septembrie",0,0,0,0,"concediu"],["8 septembrie",1,20,0,0,"20 de ouă: cele 10 din concediu, compensate"]].concat(["15","22","29"].map(d=>[d+" septembrie",1,10,0,0,""]))},
-  {name:"octombrie 2026", rows:["6","13","20"].map(d=>[d+" octombrie",1,10,0,0,""]).concat([["27 octombrie",2,0,0,0,"2 sticle (4 l), fără ouă"]])},
-  {name:"noiembrie 2026", rows:[["3 noiembrie",1,10,0,0,""],["10 noiembrie",1,10,1.8,36,"brânza 20 de lei pe kg"]]},
-];
+const DATE = {"luni": [{"nume": "aprilie 2026", "plata": 0, "randuri": [{"data": "2026-04-07", "zi": "7 aprilie", "lapte_sticle": 1, "oua": 20, "branza_kg": 3, "lei_lapte": 6, "lei_oua": 20.0, "lei_branza": 45, "pret_branza": 15, "nota": "20 de ouă; brânza pe toată luna aprilie", "abonament": 190, "total": 261.0}, {"data": "2026-04-14", "zi": "14 aprilie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}, {"data": "2026-04-21", "zi": "21 aprilie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}, {"data": "2026-04-28", "zi": "28 aprilie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}]}, {"nume": "mai 2026", "plata": 0, "randuri": [{"data": "2026-05-05", "zi": "5 mai", "lapte_sticle": 1, "oua": 10, "branza_kg": 4, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 60, "pret_branza": 15, "nota": "brânza pe toată luna mai", "abonament": 190, "total": 266.0}, {"data": "2026-05-12", "zi": "12 mai", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}, {"data": "2026-05-19", "zi": "19 mai", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}, {"data": "2026-05-26", "zi": "26 mai", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}]}, {"nume": "iunie 2026", "plata": 1, "randuri": [{"data": "2026-06-02", "zi": "2 iunie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 190, "total": 206.0}, {"data": "2026-06-09", "zi": "9 iunie", "lapte_sticle": 1, "oua": 10, "branza_kg": 2, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 30, "pret_branza": 15, "nota": "", "abonament": 0, "total": 46.0}, {"data": "2026-06-16", "zi": "16 iunie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}, {"data": "2026-06-23", "zi": "23 iunie", "lapte_sticle": 1, "oua": 10, "branza_kg": 2, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 30, "pret_branza": 15, "nota": "", "abonament": 0, "total": 46.0}, {"data": "2026-06-30", "zi": "30 iunie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}]}, {"nume": "iulie 2026", "plata": 1, "randuri": [{"data": "2026-07-07", "zi": "7 iulie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 190, "total": 206.0}, {"data": "2026-07-14", "zi": "14 iulie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}, {"data": "2026-07-21", "zi": "21 iulie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}, {"data": "2026-07-28", "zi": "28 iulie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}]}, {"nume": "august 2026", "plata": 1, "randuri": [{"data": "2026-08-04", "zi": "4 august", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 190, "total": 206.0}, {"data": "2026-08-11", "zi": "11 august", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}, {"data": "2026-08-18", "zi": "18 august", "lapte_sticle": 0, "oua": 0, "branza_kg": 0, "lei_lapte": 0, "lei_oua": 0.0, "lei_branza": 0, "pret_branza": null, "nota": "concediu", "abonament": 0, "total": 0.0}, {"data": "2026-08-25", "zi": "25 august", "lapte_sticle": 1, "oua": 20, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 20.0, "lei_branza": 0, "pret_branza": null, "nota": "20 de ouă: 10 compensate din concediu", "abonament": 0, "total": 26.0}]}, {"nume": "septembrie 2026", "plata": 1, "randuri": [{"data": "2026-09-01", "zi": "1 septembrie", "lapte_sticle": 0, "oua": 0, "branza_kg": 0, "lei_lapte": 0, "lei_oua": 0.0, "lei_branza": 0, "pret_branza": null, "nota": "concediu", "abonament": 190, "total": 190.0}, {"data": "2026-09-08", "zi": "8 septembrie", "lapte_sticle": 1, "oua": 20, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 20.0, "lei_branza": 0, "pret_branza": null, "nota": "20 de ouă: 10 compensate din concediu", "abonament": 0, "total": 26.0}, {"data": "2026-09-15", "zi": "15 septembrie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}, {"data": "2026-09-22", "zi": "22 septembrie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}, {"data": "2026-09-29", "zi": "29 septembrie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}]}, {"nume": "octombrie 2026", "plata": 1, "randuri": [{"data": "2026-10-06", "zi": "6 octombrie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 190, "total": 206.0}, {"data": "2026-10-13", "zi": "13 octombrie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}, {"data": "2026-10-20", "zi": "20 octombrie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 0, "total": 16.0}, {"data": "2026-10-27", "zi": "27 octombrie", "lapte_sticle": 2, "oua": 0, "branza_kg": 0, "lei_lapte": 12, "lei_oua": 0.0, "lei_branza": 0, "pret_branza": null, "nota": "2 sticle (4 l); fără ouă", "abonament": 0, "total": 12.0}]}, {"nume": "noiembrie 2026", "plata": null, "randuri": [{"data": "2026-11-03", "zi": "3 noiembrie", "lapte_sticle": 1, "oua": 10, "branza_kg": 0, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 0, "pret_branza": null, "nota": "", "abonament": 190, "total": 206.0}, {"data": "2026-11-10", "zi": "10 noiembrie", "lapte_sticle": 1, "oua": 10, "branza_kg": 1.8, "lei_lapte": 6, "lei_oua": 10.0, "lei_branza": 36.0, "pret_branza": 20, "nota": "", "abonament": 0, "total": 52.0}]}], "plati": [{"eticheta": "plătit înainte", "luni": "aprilie 2026 – mai 2026", "total": 623.0}, {"eticheta": "plătit pe 14 noiembrie 2026", "luni": "iunie 2026 – octombrie 2026", "total": 1346.0}], "preturi": "Prețuri: lapte 6 lei sticla de 2 l și ouă 10 lei la 10 ouă; brânză 15 lei pe kg din aprilie până în iulie 2026, 20 lei pe kg din septembrie 2026. Abonamentul e 190 de lei pe lună și include legumele; laptele, ouăle și brânza se plătesc separat, după cât vine."};
 const lei = n => n.toLocaleString("ro-RO") + " lei";
-const q = '<td class="n q">?</td>';
-// Plăți: aprilie–mai plătite înainte (verificat în cont pe 14 noiembrie 2026);
-// iunie–octombrie plătite pe 14 noiembrie 2026. Ce nu e aici rămâne de plată.
-const PAID = {"aprilie 2026":"p1","mai 2026":"p1",
-  "iunie 2026":"p2","iulie 2026":"p2","august 2026":"p2","septembrie 2026":"p2","octombrie 2026":"p2"};
-const STARE = {p1:"plătit înainte", p2:"plătit pe 14 noiembrie 2026"};
+const kg = x => String(x).replace(".", ",");
+// Ultima plată cu dată se vede pe fundal albastru; plățile mai vechi, în gri.
+const ultima = DATE.plati.map((p,i)=>i).filter(i=>DATE.plati[i].eticheta!=="plătit înainte").pop();
+const clasa = i => i===null ? "due" : (i===ultima ? "p2" : "paid");
 
 function render(){
-  const f = [0,0,0,0], plata = {p1:0, p2:0}, deplata = [];
+  const f = [0,0,0,0], deplata = [];
   let html = "";
-  months.forEach((m,i)=>{
-    const st_ = PAID[m.name], due = !st_;
-    if(due) deplata.push(m.name);
-    m.rows.forEach((r,k)=>{
-      const [d, st, ou, kg, bl, note] = r;
-      const lL = st===null ? null : st*L, lO = ou===null ? null : ou/10*O;
-      const ab = k===0 ? ABON : 0;
-      const unknown = lL===null || lO===null || bl===null;
-      const tot = (lL||0)+(lO||0)+(bl||0)+ab;
-      if(due){ f[0]+=lL||0; f[1]+=lO||0; f[2]+=bl||0; f[3]+=ab; } else plata[st_]+=tot;
-      const cL = st===null ? q : '<td class="n">'+(st?st+' <small>'+(st===1?'sticlă':'sticle')+'</small> · '+lei(lL):'—')+'</td>';
-      const cO = ou===null ? q : '<td class="n">'+(ou?ou+' · '+lei(lO):'—')+'</td>';
-      const cB = kg===null ? q : (kg<0 ? '<td class="n"></td>' : kg===0 ? '<td class="n">—</td>'
-                 : '<td class="n">'+String(kg).replace(".",",")+' <small>kg</small> · '+(bl===null?'<span class="q">?</span>':lei(bl))+'</td>');
-      html += '<tr class="'+(k===0?'first ':'')+(due?'':st_==='p2'?'p2':'paid')+'"><td>'+d+'</td>'+cL+cO+cB
-        + '<td class="n">'+(ab?lei(ab):'')+'</td>'
-        + '<td class="n">'+lei(tot)+(unknown?' <span class="q">+?</span>':'')+'</td>'
-        + '<td><span class="chip '+(due?'due':st_==='p2'?'p2':'paid')+'">'+(due?'de plată':STARE[st_])+'</span></td>'
-        + '<td class="note">'+note+'</td></tr>';
+  DATE.luni.forEach(m=>{
+    const c = clasa(m.plata);
+    if(m.plata===null) deplata.push(m.nume);
+    m.randuri.forEach((r,k)=>{
+      if(m.plata===null){ f[0]+=r.lei_lapte; f[1]+=r.lei_oua; f[2]+=r.lei_branza; f[3]+=r.abonament; }
+      const cL = '<td class="n">'+(r.lapte_sticle ? r.lapte_sticle+' <small>'+(r.lapte_sticle===1?'sticlă':'sticle')+'</small> · '+lei(r.lei_lapte) : '—')+'</td>';
+      const cO = '<td class="n">'+(r.oua ? r.oua+' · '+lei(r.lei_oua) : '—')+'</td>';
+      const cB = '<td class="n">'+(r.branza_kg ? kg(r.branza_kg)+' <small>kg × '+r.pret_branza+' lei</small> · '+lei(r.lei_branza) : '—')+'</td>';
+      html += '<tr class="'+(k===0?'first ':'')+(c==='due'?'':c)+'"><td>'+r.zi+'</td>'+cL+cO+cB
+        + '<td class="n">'+(r.abonament?lei(r.abonament):'')+'</td>'
+        + '<td class="n">'+lei(r.total)+'</td>'
+        + '<td><span class="chip '+c+'">'+(m.plata===null?'de plată':DATE.plati[m.plata].eticheta)+'</span></td>'
+        + '<td class="note">'+r.nota+'</td></tr>';
     });
   });
   document.getElementById("rows").innerHTML = html;
@@ -135,7 +105,16 @@ function render(){
   document.getElementById("fT").textContent = lei(T);
   document.getElementById("total").textContent = lei(T);
   document.getElementById("totalN").textContent = deplata.join(", ") || "nimic";
-  document.getElementById("paid2").textContent = lei(plata.p2);
+  const bar = document.getElementById("bar");
+  DATE.plati.slice().reverse().forEach(p=>{
+    const i = DATE.plati.indexOf(p);
+    const d = document.createElement("div");
+    if(i===ultima) d.className = "p2box";
+    d.innerHTML = '<span class="k">'+p.eticheta+'</span>'
+      + (i===ultima ? '<span class="big">'+lei(p.total)+'</span>' : '')
+      + '<span class="sub">'+p.luni+'</span>';
+    bar.appendChild(d);
+  });
 }
 render();
 </script>
